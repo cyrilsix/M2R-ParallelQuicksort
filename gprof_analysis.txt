@@ -3,11 +3,11 @@ Flat profile:
 Each sample counts as 0.01 seconds.
   %   cumulative   self              self     total           
  time   seconds   seconds    calls  us/call  us/call  name    
-100.24      0.01     0.01    49279     0.20     0.20  partition
-  0.00      0.01     0.00   858588     0.00     0.00  swap
-  0.00      0.01     0.00      748     0.00    13.19  quicksortHelper
-  0.00      0.01     0.00        1     0.00     0.00  isSorted
-  0.00      0.01     0.00        1     0.00     0.00  parallelQuicksort
+ 66.83      0.02     0.02    53714     0.37     0.37  partition
+ 33.41      0.03     0.01      810    12.38    36.75  quicksortHelper
+  0.00      0.03     0.00   886772     0.00     0.00  swap
+  0.00      0.03     0.00        1     0.00     0.00  isSorted
+  0.00      0.03     0.00        1     0.00     0.00  parallelQuicksort
 
  %         the percentage of the total running time of the
 time       program used by this function.
@@ -45,27 +45,27 @@ notice and this notice are preserved.
 		     Call graph (explanation follows)
 
 
-granularity: each sample hit covers 2 byte(s) for 99.76% of 0.01 seconds
+granularity: each sample hit covers 2 byte(s) for 33.25% of 0.03 seconds
 
 index % time    self  children    called     name
-                0.00    0.00     780/49279       parallelQuicksortHelper [2]
-                0.01    0.00   48499/49279       quicksortHelper [3]
-[1]    100.0    0.01    0.00   49279         partition [1]
-                0.00    0.00  858588/858588      swap [4]
------------------------------------------------
                                                  <spontaneous>
-[2]    100.0    0.00    0.01                 parallelQuicksortHelper [2]
-                0.00    0.01     748/748         quicksortHelper [3]
-                0.00    0.00     780/49279       partition [1]
+[1]    100.0    0.00    0.03                 parallelQuicksortHelper [1]
+                0.01    0.02     810/810         quicksortHelper [2]
+                0.00    0.00     827/53714       partition [3]
 -----------------------------------------------
-                               97080             quicksortHelper [3]
-                0.00    0.01     748/748         parallelQuicksortHelper [2]
-[3]     98.4    0.00    0.01     748+97080   quicksortHelper [3]
-                0.01    0.00   48499/49279       partition [1]
-                               97080             quicksortHelper [3]
+                              105730             quicksortHelper [2]
+                0.01    0.02     810/810         parallelQuicksortHelper [1]
+[2]     99.0    0.01    0.02     810+105730  quicksortHelper [2]
+                0.02    0.00   52887/53714       partition [3]
+                              105730             quicksortHelper [2]
 -----------------------------------------------
-                0.00    0.00  858588/858588      partition [1]
-[4]      0.0    0.00    0.00  858588         swap [4]
+                0.00    0.00     827/53714       parallelQuicksortHelper [1]
+                0.02    0.00   52887/53714       quicksortHelper [2]
+[3]     66.7    0.02    0.00   53714         partition [3]
+                0.00    0.00  886772/886772      swap [4]
+-----------------------------------------------
+                0.00    0.00  886772/886772      partition [3]
+[4]      0.0    0.00    0.00  886772         swap [4]
 -----------------------------------------------
                 0.00    0.00       1/1           main [13]
 [5]      0.0    0.00    0.00       1         isSorted [5]
@@ -164,5 +164,5 @@ notice and this notice are preserved.
 
 Index by function name
 
-   [5] isSorted                [1] partition               [4] swap
-   [6] parallelQuicksort       [3] quicksortHelper
+   [5] isSorted                [3] partition               [4] swap
+   [6] parallelQuicksort       [2] quicksortHelper
