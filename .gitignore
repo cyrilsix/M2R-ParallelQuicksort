@@ -4,6 +4,11 @@
 journal.html
 journal.pdf
 journal.tex
+**.swp
+
+# Measurement files
+**.dat
+**.png
 
 # Object files
 *.o

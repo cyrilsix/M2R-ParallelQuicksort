@@ -19,29 +19,34 @@
 #include <string.h>
 
 #define DNUM 1000000
+
+#ifndef THREAD_LEVEL
 #define THREAD_LEVEL 10
+#endif
 
 //for sequential and parallel implementation
-void swap(double lyst[], int i, int j);
-int partition(double lyst[], int lo, int hi);
-void quicksortHelper(double lyst[], int lo, int hi);
-void quicksort(double lyst[], int size);
-int isSorted(double lyst[], int size);
+void swap(double list[], int i, int j);
+int partition(double list[], int lo, int hi);
+void quicksortHelper(double list[], int lo, int hi);
+void quicksort(double list[], int size);
+int isSorted(double list[], int size);
 
 //for parallel implementation
-void parallelQuicksort(double lyst[], int size, int tlevel);
+void parallelQuicksort(double list[], int size, int tlevel);
 void *parallelQuicksortHelper(void *threadarg) __attribute__ ((noreturn));
 struct thread_data {
-  double *lyst;
+  double *list;
   int low;
   int high;
   int level;
 };
-//thread_data should be thread-safe, since while lyst is 
+//thread_data should be thread-safe, since while list is 
 //shared, [low, high] will not overlap among threads.
 
 //for the builtin qsort, for fun:
 int compare_doubles(const void *a, const void *b);
+
+typedef enum version {ALL=0, SEQ, PAR, LIBC} version_e;
 
 /*
 Main method:
@@ -54,115 +59,126 @@ int main(int argc, char *argv[])
 {
   struct timeval start, end;
   double diff;
+  version_e version = ALL; // ALL, SEQ, PAR or LIBC
 
   srand(time(NULL));            //seed random
 
   int NUM = DNUM;
-  if (argc == 2)                //user specified list size.
+  if (argc >= 2)                //user specified list size.
   {
     NUM = atoi(argv[1]);
   }
+  if (argc == 3)
+  {
+    version = atoi(argv[2]);
+    if (version > LIBC)
+      version = ALL;
+  }
   //Want to compare sorting on the same list,
   //so backup.
-  double *lystbck = (double *) malloc(NUM * sizeof(double));
-  double *lyst = (double *) malloc(NUM * sizeof(double));
+  double *listbck = (double *) malloc(NUM * sizeof(double));
+  double *list = (double *) malloc(NUM * sizeof(double));
 
   //Populate random original/backup list.
   for (int i = 0; i < NUM; i++) {
-    lystbck[i] = 1.0 * rand() / RAND_MAX;
+    listbck[i] = 1.0 * rand() / RAND_MAX;
   }
 
-  //copy list.
-  memcpy(lyst, lystbck, NUM * sizeof(double));
+  /* Sequential version */
+  if (version == ALL || version == SEQ){
+    //copy list.
+    memcpy(list, listbck, NUM * sizeof(double));
 
+    //Sequential mergesort, and timing.
+    gettimeofday(&start, NULL);
+    quicksort(list, NUM);
+    gettimeofday(&end, NULL);
 
-  //Sequential mergesort, and timing.
-  gettimeofday(&start, NULL);
-  quicksort(lyst, NUM);
-  gettimeofday(&end, NULL);
-
-  if (!isSorted(lyst, NUM)) {
-    printf("Oops, lyst did not get sorted by quicksort.\n");
+    if (!isSorted(list, NUM)) {
+      printf("Oops, list did not get sorted by quicksort.\n");
+    }
+    //Compute time difference.
+    diff = ((end.tv_sec * 1000000 + end.tv_usec)
+            - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000.0;
+    printf("Sequential quicksort took: %lf sec.\n", diff);
   }
-  //Compute time difference.
-  diff = ((end.tv_sec * 1000000 + end.tv_usec)
-          - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000.0;
-  printf("Sequential quicksort took: %lf sec.\n", diff);
 
+  /* Parallel version */
+  if (version == ALL || version == PAR){
+    //Now, parallel quicksort.
 
+    //copy list.
+    memcpy(list, listbck, NUM * sizeof(double));
 
-  //Now, parallel quicksort.
+    gettimeofday(&start, NULL);
+    parallelQuicksort(list, NUM, THREAD_LEVEL);
+    gettimeofday(&end, NULL);
 
-  //copy list.
-  memcpy(lyst, lystbck, NUM * sizeof(double));
-
-  gettimeofday(&start, NULL);
-  parallelQuicksort(lyst, NUM, THREAD_LEVEL);
-  gettimeofday(&end, NULL);
-
-  if (!isSorted(lyst, NUM)) {
-    printf("Oops, lyst did not get sorted by parallelQuicksort.\n");
+    if (!isSorted(list, NUM)) {
+      printf("Oops, list did not get sorted by parallelQuicksort.\n");
+    }
+    //Compute time difference.
+    diff = ((end.tv_sec * 1000000 + end.tv_usec)
+            - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000.0;
+    printf("Parallel quicksort took: %lf sec.\n", diff);
   }
-  //Compute time difference.
-  diff = ((end.tv_sec * 1000000 + end.tv_usec)
-          - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000.0;
-  printf("Parallel quicksort took: %lf sec.\n", diff);
 
+  /* Built-in version */
+  if (version == ALL || version == LIBC){
+    //Finally, built-in for reference:
+    memcpy(list, listbck, NUM * sizeof(double));
+    gettimeofday(&start, NULL);
+    qsort(list, NUM, sizeof(double), compare_doubles);
+    gettimeofday(&end, NULL);
 
-
-  //Finally, built-in for reference:
-  memcpy(lyst, lystbck, NUM * sizeof(double));
-  gettimeofday(&start, NULL);
-  qsort(lyst, NUM, sizeof(double), compare_doubles);
-  gettimeofday(&end, NULL);
-
-  if (!isSorted(lyst, NUM)) {
-    printf("Oops, lyst did not get sorted by qsort.\n");
+    if (!isSorted(list, NUM)) {
+      printf("Oops, list did not get sorted by qsort.\n");
+    }
+    //Compute time difference.
+    diff = ((end.tv_sec * 1000000 + end.tv_usec)
+            - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000.0;
+    printf("Built-in quicksort took: %lf sec.\n", diff);
   }
-  //Compute time difference.
-  diff = ((end.tv_sec * 1000000 + end.tv_usec)
-          - (start.tv_sec * 1000000 + start.tv_usec)) / 1000000.0;
-  printf("Built-in quicksort took: %lf sec.\n", diff);
 
-  free(lyst);
-  free(lystbck);
+  free(list);
+  free(listbck);
   pthread_exit(NULL);
 }
 
-void quicksort(double lyst[], int size)
+void quicksort(double list[], int size)
 {
-  quicksortHelper(lyst, 0, size - 1);
+  quicksortHelper(list, 0, size - 1);
 }
 
-void quicksortHelper(double lyst[], int lo, int hi)
+void quicksortHelper(double list[], int lo, int hi)
 {
   if (lo >= hi)
     return;
-  int b = partition(lyst, lo, hi);
-  quicksortHelper(lyst, lo, b - 1);
-  quicksortHelper(lyst, b + 1, hi);
+  int b = partition(list, lo, hi);
+  quicksortHelper(list, lo, b - 1);
+  quicksortHelper(list, b + 1, hi);
 }
 
-void swap(double lyst[], int i, int j)
+void swap(double list[], int i, int j)
 {
-  double temp = lyst[i];
-  lyst[i] = lyst[j];
-  lyst[j] = temp;
+  double temp = list[i];
+  list[i] = list[j];
+  list[j] = temp;
 }
 
-int partition(double lyst[], int lo, int hi)
+int partition(double list[], int lo, int hi)
 {
   int b = lo;
   int r = (int) (lo + (hi - lo) * (1.0 * rand() / RAND_MAX));
-  double pivot = lyst[r];
-  swap(lyst, r, hi);
+  double pivot = list[r];
+  swap(list, r, hi);
   for (int i = lo; i < hi; i++) {
-    if (lyst[i] < pivot) {
-      swap(lyst, i, b);
+    if (list[i] < pivot) {
+      swap(list, i, b);
       b++;
     }
   }
-  swap(lyst, hi, b);
+  swap(list, hi, b);
   return b;
 }
 
@@ -172,7 +188,7 @@ parallel quicksort top level:
 instantiate parallelQuicksortHelper thread, and that's 
 basically it.
 */
-void parallelQuicksort(double lyst[], int size, int tlevel)
+void parallelQuicksort(double list[], int size, int tlevel)
 {
   int rc;
   void *status;
@@ -184,7 +200,7 @@ void parallelQuicksort(double lyst[], int size, int tlevel)
 
   //pthread function can take only one argument, so struct.
   struct thread_data td;
-  td.lyst = lyst;
+  td.list = list;
   td.low = 0;
   td.high = size - 1;
   td.level = tlevel;
@@ -229,7 +245,7 @@ void *parallelQuicksortHelper(void *threadarg)
 
   if (my_data->level <= 0 || my_data->low == my_data->high+1) {
     //We have plenty of threads, finish with sequential.
-    quicksortHelper(my_data->lyst, my_data->low, my_data->high);
+    quicksortHelper(my_data->list, my_data->low, my_data->high);
     pthread_exit(NULL);
   }
   //Want joinable threads (usually default).
@@ -237,15 +253,15 @@ void *parallelQuicksortHelper(void *threadarg)
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-  //Now we partition our part of the lyst.
-  mid = partition(my_data->lyst, my_data->low, my_data->high);
+  //Now we partition our part of the list.
+  mid = partition(my_data->list, my_data->low, my_data->high);
 
   //At this point, we will create threads for the 
   //left and right sides.  Must create their data args.
   struct thread_data thread_data_array[2];
 
   for (t = 0; t < 2; t++) {
-    thread_data_array[t].lyst = my_data->lyst;
+    thread_data_array[t].list = my_data->list;
     thread_data_array[t].level = my_data->level - 1;
   }
   thread_data_array[0].low = my_data->low;
@@ -280,13 +296,13 @@ void *parallelQuicksortHelper(void *threadarg)
   pthread_exit(NULL);
 }
 
-//check if the elements of lyst are in non-decreasing order.
+//check if the elements of list are in non-decreasing order.
 //one is success.
-int isSorted(double lyst[], int size)
+int isSorted(double list[], int size)
 {
   for (int i = 1; i < size; i++) {
-    if (lyst[i] < lyst[i - 1]) {
-      printf("at loc %d, %e < %e \n", i, lyst[i], lyst[i - 1]);
+    if (list[i] < list[i - 1]) {
+      printf("at loc %d, %e < %e \n", i, list[i], list[i - 1]);
       return 0;
     }
   }

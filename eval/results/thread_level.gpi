@@ -1,0 +1,26 @@
+set autoscale
+set logscale xy
+set xtic auto
+set ytic auto
+
+set title "Comparing the thread_level option for the parallel version"
+set xlabel "Size of the array"
+set ylabel "Computation time (s)"
+
+set term png
+set output strftime('thread_level/%F_%H-%M-%S.png', time(0))
+
+plot "par_lvl_1.dat" using 1:2:3 title 'Level 1' with yerrorbars linetype 1, \
+    "" using 1:2 notitle with lines linetype 1, \
+    "par_lvl_5.dat" using 1:2:3 title 'Level 5' with yerrorbars linetype 2, \
+    "" using 1:2 notitle with lines linetype 2, \
+    "par_lvl_10.dat" using 1:2:3 title 'Level 10' with yerrorbars linetype 3, \
+    "" using 1:2 notitle with lines linetype 3, \
+    "par_lvl_20.dat" using 1:2:3 title 'Level 20' with yerrorbars linetype 4, \
+    "" using 1:2 notitle with lines linetype 4, \
+    "par_lvl_50.dat" using 1:2:3 title 'Level 50' with yerrorbars linetype 5, \
+    "" using 1:2 notitle with lines linetype 5, \
+    "par_lvl_100.dat" using 1:2:3 title 'Level 100' with yerrorbars linetype 6, \
+    "" using 1:2 notitle with lines linetype 6
+
+

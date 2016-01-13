@@ -1,0 +1,18 @@
+set autoscale
+set logscale xy
+set xtic auto
+set ytic auto
+
+set title "Comparing the three versions"
+set xlabel "Size of the array"
+set ylabel "Computation time (s)"
+
+set term png
+set output strftime('versions/%F_%H-%M-%S.png', time(0))
+
+plot "seq.dat" using 1:2:3 title 'Sequential' with yerrorbars linetype 1, \
+    "" using 1:2 notitle with lines linetype 1, \
+    "par.dat" using 1:2:3 title 'Parallel' with yerrorbars linetype 2, \
+    "" using 1:2 notitle with lines linetype 2, \
+    "libc.dat" using 1:2:3 title 'Built-in' with yerrorbars linetype 3, \
+    "" using 1:2 notitle with lines linetype 3

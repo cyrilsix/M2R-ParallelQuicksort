@@ -1,0 +1,21 @@
+set autoscale
+set logscale xy
+set xtic auto
+set ytic auto
+
+set title "Comparing the optimization flags for the sequential version"
+set xlabel "Size of the array"
+set ylabel "Computation time (s)"
+
+set term png
+set output strftime('optimizations_seq/%F_%H-%M-%S.png', time(0))
+
+plot "seqO0.dat" using 1:2:3 title 'Sequential O0' with yerrorbars linetype 1, \
+    "" using 1:2 notitle with lines linetype 1, \
+    "seqO1.dat" using 1:2:3 title 'Sequential O1' with yerrorbars linetype 2, \
+    "" using 1:2 notitle with lines linetype 2, \
+    "seqO2.dat" using 1:2:3 title 'Sequential O2' with yerrorbars linetype 3, \
+    "" using 1:2 notitle with lines linetype 3, \
+    "seqO3.dat" using 1:2:3 title 'Sequential O3' with yerrorbars linetype 4, \
+    "" using 1:2 notitle with lines linetype 4
+
